@@ -31,11 +31,11 @@ Our model is based on the GlowTTS architecture which we implemented in the NeMo 
 After installation, you should have;
 1) NeMo toolkit (version 1.5.0), [https://github.com/NVIDIA/NeMo](https://github.com/NVIDIA/NeMo)
 2) Pytorch 1.10.0 or above
-4) Pytorch Lightning
+3) Pytorch Lightning
 
-5) An NVIDIA GPU for required for training. We used mixed-precision training.
+4) An NVIDIA GPU is required for model training. Also, we used mixed-precision training for all our experiments.
 
-PS: Checkout the NeMo github page if you have problems with the library installation.
+PS: Checkout the NeMo github page if you have problems with the library installations.
 
 ## 2. Model setup
 
