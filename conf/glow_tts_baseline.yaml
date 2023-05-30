@@ -1,0 +1,275 @@
+name: "GlowTTS_baseline"
+gin_channels: 256
+use_stoch_dur_pred: false
+use_stoch_pitch_pred: false
+use_log_pitch: false
+sup_data_path: ???
+sup_data_types: ["speaker_emb"]
+
+train_dataset: ???
+validation_datasets: ???
+test_datasets: null
+
+phoneme_dict_path: "../NeMo/scripts/tts_dataset_files/cmudict-0.7b_nv22.10"
+heteronyms_path: "../NeMo/scripts/tts_dataset_files/heteronyms-052722"
+whitelist_path: "../NeMo/nemo_text_processing/text_normalization/en/data/whitelist/lj_speech.tsv"
+
+speaker_emb_path: ???
+
+# Default values from librosa.pyin
+pitch_fmin: null
+pitch_fmax: null
+pitch_mean: null
+pitch_std: null
+
+# Default values for dataset with sample_rate=22050
+sample_rate: 16000
+n_mel_channels: 80
+n_window_size: 1024
+n_window_stride: 256
+n_fft: 1024
+lowfreq: 0
+highfreq: 8000
+window: hann
+pad_value: 0.0
+
+model:
+  n_speakers: 4469
+  gin_channels: ${gin_channels}
+  use_external_speaker_emb: true
+  speaker_emb_path: ${speaker_emb_path}
+  use_stoch_dur_pred: ${use_stoch_dur_pred}
+  use_stoch_pitch_pred: ${use_stoch_pitch_pred}
+  pitch_loss_scale: 0.0
+
+  max_token_duration: 75
+  symbols_embedding_dim: 256 #384
+  pitch_embedding_kernel_size: 3
+
+  pitch_fmin: ${pitch_fmin}
+  pitch_fmax: ${pitch_fmax}
+
+  pitch_mean: ${pitch_mean}
+  pitch_std: ${pitch_std}
+
+  sample_rate: ${sample_rate}
+  n_mel_channels: ${n_mel_channels}
+  n_window_size: ${n_window_size}
+  n_window_stride: ${n_window_stride}
+  n_fft: ${n_fft}
+  lowfreq: ${lowfreq}
+  highfreq: ${highfreq}
+  window: ${window}
+  pad_value: ${pad_value}
+
+  # use_log_pitch: ${use_log_pitch}
+  
+  # text_normalizer:
+  #   _target_: nemo_text_processing.text_normalization.normalize.Normalizer
+  #   lang: en
+  #   input_case: cased
+  #   whitelist: ${whitelist_path}
+
+  # text_normalizer_call_kwargs:
+  #   verbose: false
+  #   punct_pre_process: true
+  #   punct_post_process: true
+
+  text_tokenizer:
+    _target_: utils.tts_tokenizers.EnglishPhonemesTokenizer
+    punct: true
+    stresses: false # true
+    chars: true
+    apostrophe: true
+    pad_with_space: false
+    add_blank_at: "last"
+    add_blank_to_text: true
+    g2p:
+      _target_: nemo_text_processing.g2p.modules.EnglishG2p
+      phoneme_dict: ${phoneme_dict_path}
+      heteronyms: ${heteronyms_path}
+      phoneme_probability: 0.8
+
+  train_ds:
+    dataset:
+      _target_: utils.data.TTSDataset
+      manifest_filepath: ${train_dataset}
+      sample_rate: ${model.sample_rate}
+      sup_data_path: ${sup_data_path}
+      sup_data_types: ${sup_data_types}
+      n_fft: ${n_fft}
+      win_length: ${model.n_fft}
+      hop_length: ${model.n_window_stride}
+      window: ${model.window}
+      n_mels: ${model.n_mel_channels}
+      lowfreq: ${model.lowfreq}
+      highfreq: ${model.highfreq}
+      max_duration: 16.7
+      min_duration: 0.1
+      ignore_file: null
+      trim: false
+      # pitch_fmin: ${model.pitch_fmin}
+      # pitch_fmax: ${model.pitch_fmax}
+      # pitch_norm: true
+      # pitch_mean: ${model.pitch_mean}
+      # pitch_std: ${model.pitch_std}
+      # use_log_pitch: ${model.use_log_pitch}
+      speaker_emb_path: ${speaker_emb_path}
+
+    dataloader_params:
+      drop_last: false
+      shuffle: true
+      batch_size: 32
+      num_workers: 32
+      pin_memory: true
+
+  validation_ds:
+    dataset:
+      _target_: utils.data.TTSDataset
+      manifest_filepath: ${validation_datasets}
+      sample_rate: ${model.sample_rate}
+      sup_data_path: ${sup_data_path}
+      sup_data_types: ${sup_data_types}
+      n_fft: ${model.n_fft}
+      win_length: ${model.n_window_size}
+      hop_length: ${model.n_window_stride}
+      window: ${model.window}
+      n_mels: ${model.n_mel_channels}
+      lowfreq: ${model.lowfreq}
+      highfreq: ${model.highfreq}
+      max_duration: null
+      min_duration: null
+      ignore_file: null
+      trim: false
+      # pitch_fmin: ${model.pitch_fmin}
+      # pitch_fmax: ${model.pitch_fmax}
+      # pitch_norm: true
+      # pitch_mean: ${model.pitch_mean}
+      # pitch_std: ${model.pitch_std}
+      # use_log_pitch: ${model.use_log_pitch}
+      speaker_emb_path: ${speaker_emb_path}
+
+    dataloader_params:
+      drop_last: false
+      shuffle: false
+      batch_size: 2
+      num_workers: 2
+      pin_memory: true
+
+  preprocessor:
+    _target_: nemo.collections.asr.modules.AudioToMelSpectrogramPreprocessor
+    features: ${model.n_mel_channels}
+    lowfreq: ${model.lowfreq}
+    highfreq: ${model.highfreq}
+    n_fft: ${model.n_fft}
+    n_window_size: ${model.n_window_size}
+    window_size: false
+    n_window_stride: ${model.n_window_stride}
+    window_stride: false
+    pad_to: 1
+    pad_value: ${model.pad_value}
+    sample_rate: ${model.sample_rate}
+    window: ${model.window}
+    normalize: null
+    preemph: null
+    dither: 0.0
+    frame_splicing: 1
+    log: true
+    log_zero_guard_type: add
+    log_zero_guard_value: 1e-05
+    mag_power: 1.0
+
+  encoder:
+    _target_: modules.glow_tts_with_pitch.TextEncoder
+    n_vocab: 148
+    out_channels: ${model.n_mel_channels}
+    hidden_channels: 192
+    filter_channels: 768
+    filter_channels_dp: 256
+    kernel_size: 3
+    p_dropout: 0.1
+    n_layers: 6
+    n_heads: 2
+    window_size: 4
+    prenet: true
+    mean_only: true
+    gin_channels: ${gin_channels}
+    use_stoch_dur_pred: ${use_stoch_dur_pred}
+
+  decoder:
+    _target_: modules.glow_tts_with_pitch.FlowSpecDecoder
+    in_channels: ${model.n_mel_channels}
+    hidden_channels: 192
+    kernel_size: 5
+    n_blocks: 12
+    n_layers: 4
+    n_sqz: 2
+    n_split: 4
+    sigmoid_scale: false
+    p_dropout: 0.05
+    dilation_rate: 1
+    gin_channels: ${gin_channels}
+
+  optim:
+    name: radam
+    lr: 2e-4
+    # optimizer arguments
+    betas: [0.9, 0.98]
+    weight_decay: 0.0
+
+    # scheduler setup
+    sched:
+      name: CosineAnnealing
+
+      # Scheduler params
+      warmup_steps: 6000
+      min_lr: 1e-5
+      last_epoch: -1
+
+
+trainer:
+  accelerator: auto
+  devices: -1 #-1 # number of gpus
+  strategy: ddp
+  num_nodes: 1
+  enable_checkpointing: false # Provided by exp_manager
+  logger: false # Provided by exp_manager
+  max_epochs: 1000
+  max_steps: -1 # computed at runtime if not set
+  accumulate_grad_batches: 2
+  log_every_n_steps: 100  # Interval of logging.
+  check_val_every_n_epoch: 2
+  amp_backend: native
+  precision: 16 # mixed-precision training
+  gradient_clip_val: 5.0
+
+
+exp_manager:
+  exp_dir: null
+  name: ${name}
+  resume_if_exists: False
+  resume_ignore_no_checkpoint: True
+  create_tensorboard_logger: True
+  create_checkpoint_callback: True
+  checkpoint_callback_params:
+    always_save_nemo: True
+    save_top_k: 1
+    monitor: "val_loss"
+    mode: "min"
+  create_early_stopping_callback: False
+  early_stopping_params:
+    monitor: "val_loss"
+    patience: 10
+    verbose: True
+    mode: "min"
+  create_wandb_logger: False
+  wandb_logger_kwargs:
+    name: null
+    project: null
+
+hydra:
+  run:
+    dir: .
+  job_logging:
+    root:
+      handlers: null
