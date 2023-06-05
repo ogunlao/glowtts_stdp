@@ -33,16 +33,17 @@ After installation, you should have;
 2) Pytorch 1.10.0 or above
 3) Pytorch Lightning
 
-4) An NVIDIA GPU is required for model training. Also, we used mixed-precision training for all our experiments.
+
+GPUs are required for model training. Kindly note that we used mixed-precision training for all our experiments.
 
 PS: Checkout the NeMo github page if you have problems with the library installations.
 
 ## 2. Model setup
 
 Clone this github repo after installing NeMo and changing to the correct branch successfully. This repo contains;
-i.  the model
-ii. the dataset (without the audio files)
-iii. the training scripts 
+i.  the model,
+ii. the dataset (without the audio files),
+iii. the training scripts,
 iv. configuration files for all the experiments
 
 ```bash
@@ -58,8 +59,7 @@ The config file for hifi-GAN is provided in `glowtts_stdp/conf/hifigan16k_ft.yam
 
 c) A speaker embedding file is required either in the form of a pickle or json file. We extract embedding vectors using the open source library, [resemblyzer](https://github.com/resemble-ai/Resemblyzer). 
 
-Save embeddings as pickle dictionary with the audio name (without extension):
-e.g.
+Embeddings should be saved as a lookup table (dictionary) using the structure:
 
 ```
     {
@@ -67,6 +67,9 @@ e.g.
     audio2: [[embedding vector1]],
     }
 ```
+
+Notice that audio files are without extension. The lookup table can either be saved on disk as a pickle or json file. 
+
 
 ## 3. Training Example
 
@@ -88,7 +91,7 @@ To train the GlowTTS-STDP model (model with stochastic duration prediction and s
     sh train_glowtts_stdp.sh
 ```
 
-NeMo uses [Hydra](https://hydra.cc/) for hyperparameter configuration, therefore hyperparameters can be changed either in the config files or in the train scripts. 
+NeMo uses [Hydra](https://hydra.cc/) for hyperparameter configuration, therefore hyperparameters can be changed either in their respective config file or in their train scripts. 
 
 ## 4. Inference Example
 
